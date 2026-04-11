@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: leafengines-agricultural-intelligence
+    runtime: python
+    buildCommand: pip3 install -r requirements.txt
+    startCommand: /opt/render/project/src/.venv/bin/gunicorn leafengines_emergency_api:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: FLASK_DEBUG
+        value: false
+      - key: ADMIN_TOKEN
+        value: emergency_admin_20260405
+      - key: LEAFENGINES_API_URL
+        value: https://api.soilsidekickpro.com
