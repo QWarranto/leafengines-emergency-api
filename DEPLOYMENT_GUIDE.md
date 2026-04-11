@@ -13,7 +13,7 @@
    - Name: `leafengines-emergency`
    - Environment: `Python 3`
    - Build Command: `pip install -r requirements.txt`
-   - Start Command: `gunicorn leafengines_emergency_api:app --bind 0.0.0.0:$PORT`
+   - Start Command: `gunicorn api:app --bind 0.0.0.0:$PORT`
 5. Add Environment Variables from `.env`
 6. Deploy
 
