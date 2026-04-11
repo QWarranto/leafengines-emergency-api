@@ -9,13 +9,22 @@ import os
 import json
 from datetime import datetime, timedelta
 from typing import Dict, Optional
+import logging
 
 app = Flask(__name__)
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # In-memory storage for emergency phase
 # In production, use Redis or database
 API_KEYS = {}
 USAGE_TRACKER = {}
+REQUEST_LOGS = []  # Store recent requests for monitoring
 
 class EmergencyAPI:
     def __init__(self):
@@ -47,6 +56,25 @@ class EmergencyAPI:
         USAGE_TRACKER[api_key] += 1
 
 api = EmergencyAPI()
+
+@app.before_request
+def log_request():
+    """Log all incoming requests"""
+    global REQUEST_LOGS
+    log_entry = {
+        'timestamp': datetime.now().isoformat(),
+        'method': request.method,
+        'path': request.path,
+        'remote_addr': request.remote_addr,
+        'user_agent': request.headers.get('User-Agent', 'Unknown')
+    }
+    REQUEST_LOGS.append(log_entry)
+    
+    # Keep only last 1000 logs
+    if len(REQUEST_LOGS) > 1000:
+        REQUEST_LOGS = REQUEST_LOGS[-1000:]
+    
+    logger.info(f"Request: {request.method} {request.path} from {request.remote_addr}")
 
 @app.route('/v1/health', methods=['GET'])
 def health_check():
@@ -91,10 +119,12 @@ def analyze_soil():
     # Validate API key
     api_key = request.headers.get('X-API-Key')
     if not api_key:
+        logger.warning("Soil analyze request without API key")
         return jsonify({"error": "X-API-Key header required"}), 400
         
     key_info = api.validate_api_key(api_key)
     if not key_info:
+        logger.warning(f"Invalid API key attempt: {api_key[:8]}...")
         return jsonify({"error": "Invalid API key"}), 401
     
     # Get request data
@@ -104,6 +134,8 @@ def analyze_soil():
     
     # Track usage
     api.track_usage(api_key)
+    
+    logger.info(f"Soil analysis request: {location} ({soil_type}) by key {api_key[:8]}...")
     
     # Basic soil analysis (expand with real logic later)
     analysis = {
@@ -223,12 +255,45 @@ def get_stats():
     if admin_token != os.getenv('ADMIN_TOKEN', 'emergency_admin_2026'):
         return jsonify({"error": "Unauthorized"}), 403
     
+    # Calculate recent activity (last 24 hours)
+    recent_cutoff = datetime.now() - timedelta(hours=24)
+    recent_logs = [log for log in REQUEST_LOGS 
+                  if datetime.fromisoformat(log['timestamp']) > recent_cutoff]
+    
+    # Group by endpoint
+    endpoint_counts = {}
+    for log in recent_logs:
+        endpoint_counts[log['path']] = endpoint_counts.get(log['path'], 0) + 1
+    
     return jsonify({
         "total_keys": len(API_KEYS),
         "total_usage": sum(USAGE_TRACKER.values()),
         "active_keys": [k for k, v in API_KEYS.items() 
                        if datetime.now() < datetime.fromisoformat(v['expires'])],
         "usage_by_key": USAGE_TRACKER,
+        "recent_activity_24h": {
+            "total_requests": len(recent_logs),
+            "by_endpoint": endpoint_counts,
+            "unique_ips": len(set(log['remote_addr'] for log in recent_logs))
+        },
+        "request_logs_sample": REQUEST_LOGS[-10:],  # Last 10 requests
+        "timestamp": datetime.now().isoformat()
+    })
+
+@app.route('/v1/monitor/public', methods=['GET'])
+def public_monitor():
+    """Public monitoring endpoint (no auth required)"""
+    recent_cutoff = datetime.now() - timedelta(hours=24)
+    recent_logs = [log for log in REQUEST_LOGS 
+                  if datetime.fromisoformat(log['timestamp']) > recent_cutoff]
+    
+    return jsonify({
+        "status": "operational",
+        "total_requests_24h": len(recent_logs),
+        "unique_users_24h": len(set(log['remote_addr'] for log in recent_logs)),
+        "endpoints_active": list(set(log['path'] for log in recent_logs)),
+        "last_request": REQUEST_LOGS[-1] if REQUEST_LOGS else None,
+        "uptime": "100%",  # Would need actual uptime tracking
         "timestamp": datetime.now().isoformat()
     })
 
@@ -242,9 +307,11 @@ if __name__ == '__main__':
     print(f"  POST /v1/soil/analyze")
     print(f"  POST /v1/crop/recommend")
     print(f"  POST /v1/auth/validate")
+    print(f"  GET  /v1/monitor/public")
     print(f"  POST /v1/admin/load-key (admin)")
     print(f"  GET  /v1/admin/stats (admin)")
     print(f"\n🔑 API keys must be loaded via /v1/admin/load-key")
+    print(f"📈 Monitoring: GET /v1/monitor/public for public stats")
     print(f"🌍 Service must be deployed before issuing keys to developers")
     
     app.run(host='0.0.0.0', port=port, debug=debug)

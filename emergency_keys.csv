@@ -1,0 +1,11 @@
+api_key,email,plan,calls_limit,payment_received,payment_method,amount,expires,created
+leaf-test-370df0a2e62e,test1@leafengines.com,Free,100,true,PayPal,0,2026-05-11T04:27:47.870661,2026-04-11T04:27:47.870673
+leaf-test-b01d8c9b0b28,test2@leafengines.com,Starter,1000,true,Cash App,149,2026-05-11T04:27:47.870681,2026-04-11T04:27:47.870683
+leaf-test-b80153e4cf70,test3@leafengines.com,Pro,10000,true,Venmo,499,2026-05-11T04:27:47.870688,2026-04-11T04:27:47.870690
+leaf-test-bbca7bff74ea,developer@example.com,Enterprise,100000,true,Bitcoin,999,2026-05-11T04:27:47.870695,2026-04-11T04:27:47.870696
+leaf-test-c929daab39f9,farmer@test.com,Free,100,true,Ethereum,0,2026-05-11T04:27:47.870701,2026-04-11T04:27:47.870702
+leaf-test-82d5882d9a4a,researcher@test.com,Starter,1000,false,PayPal,149,2026-05-11T04:27:47.870707,2026-04-11T04:27:47.870709
+leaf-test-3a7955d9542f,student@test.com,Pro,10000,false,Cash App,499,2026-05-11T04:27:47.870714,2026-04-11T04:27:47.870715
+leaf-test-a78cbd517513,startup@test.com,Enterprise,100000,false,Venmo,999,2026-05-11T04:27:47.870722,2026-04-11T04:27:47.870724
+leaf-test-099c6d7d6ff4,enterprise@test.com,Free,100,false,Bitcoin,0,2026-05-11T04:27:47.870729,2026-04-11T04:27:47.870730
+leaf-test-1161295843f2,community@test.com,Starter,1000,false,Ethereum,149,2026-05-11T04:27:47.870735,2026-04-11T04:27:47.870737
