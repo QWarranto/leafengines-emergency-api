@@ -26,6 +26,28 @@ API_KEYS = {}
 USAGE_TRACKER = {}
 REQUEST_LOGS = []  # Store recent requests for monitoring
 
+# Load emergency keys on startup
+def load_emergency_keys():
+    """Load API keys from emergency_keys.csv on startup"""
+    import csv
+    try:
+        with open('emergency_keys.csv', 'r') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                API_KEYS[row['api_key']] = {
+                    'plan': 'Emergency Starter',
+                    'calls_limit': 5000,
+                    'expires': (datetime.now() + timedelta(days=7)).isoformat(),
+                    'email': row.get('email', ''),
+                    'created': datetime.now().isoformat()
+                }
+        logger.info(f"Loaded {len(API_KEYS)} emergency API keys")
+    except FileNotFoundError:
+        logger.warning("emergency_keys.csv not found - starting with empty key store")
+
+# Load keys immediately
+load_emergency_keys()
+
 class EmergencyAPI:
     def __init__(self):
         self.base_url = os.getenv('LEAFENGINES_API_URL', 'https://api.soilsidekickpro.com')
@@ -90,6 +112,16 @@ def health_check():
             "/v1/auth/validate"
         ],
         "message": "LeafEngines Emergency API - Building while serving"
+    })
+
+@app.route('/test', methods=['GET'])
+def test():
+    """Debug test endpoint"""
+    return jsonify({
+        "message": "API is working",
+        "timestamp": datetime.now().isoformat(),
+        "keys_loaded": len(API_KEYS),
+        "routes": [str(rule) for rule in app.url_map.iter_rules()]
     })
 
 @app.route('/v1/auth/validate', methods=['POST'])
