@@ -77,6 +77,17 @@ Visit [soilsidekickpro.com/api-docs](https://soilsidekickpro.com/api-docs) or re
 - **Starter ($10/mo → $49/mo for life):** [Subscribe here](https://buy.stripe.com/14A7sL30y8bR2F4fbgaMU02)
 - **Pro ($49/mo → $149/mo for life):** [Subscribe here](https://buy.stripe.com/cNi3cv1WuajZcfE7IOaMU03)
 
+### **Normal Pricing (After Founder Period):**
+- **Starter ($149/mo):** [Subscribe](https://buy.stripe.com/5kQ6oHcB88bR93s8MSaMU04)
+- **Pro ($499/mo):** [Subscribe](https://buy.stripe.com/14A6oH7gO3VBcfE1kqaMU05)
+- **Enterprise ($1,999/mo):** [Subscribe](https://buy.stripe.com/eVqaEXfNkajZ6Vk0gmaMU06)
+
+### **Pay-As-You-Go (500 calls per pack):**
+- **Commoditized ($0.50):** [Buy](https://buy.stripe.com/8x2fZh1Wu8bR4Nc9QWaMU08)
+- **Enhanced ($1.50):** [Buy](https://buy.stripe.com/7sY28reJg1NtenM8MSaMU0b)
+- **Proprietary ($5.00):** [Buy](https://buy.stripe.com/3cIeVd9oW1NtgvU1kqaMU09)
+- **Exclusive ($10.00):** [Buy](https://buy.stripe.com/6oU4gzbx40Jp6Vk1kqaMU0a)
+
 ### **Available Endpoints:**
 
 #### Health Check
