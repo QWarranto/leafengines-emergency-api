@@ -88,7 +88,7 @@ GET /v1/health
 ```
 POST /v1/soil/analyze
 Content-Type: application/json
-Authorization: Bearer YOUR_API_KEY
+X-API-Key: YOUR_API_KEY
 
 {
   "latitude": 33.6635,
@@ -101,7 +101,7 @@ Authorization: Bearer YOUR_API_KEY
 ```
 POST /v1/water/quality
 Content-Type: application/json
-Authorization: Bearer YOUR_API_KEY
+X-API-Key: YOUR_API_KEY
 
 {
   "latitude": 33.6635,
