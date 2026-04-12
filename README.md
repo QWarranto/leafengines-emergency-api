@@ -73,6 +73,10 @@ https://leafengines-agricultural-intelligence.onrender.com
 ### **Get Your API Key:**
 Visit [soilsidekickpro.com/api-docs](https://soilsidekickpro.com/api-docs) or request via GitHub issues.
 
+### **Founder Pricing (First 100 Only):**
+- **Starter ($10/mo → $49/mo for life):** [Subscribe here](https://buy.stripe.com/14A7sL30y8bR2F4fbgaMU02)
+- **Pro ($49/mo → $149/mo for life):** [Subscribe here](https://buy.stripe.com/cNi3cv1WuajZcfE7IOaMU03)
+
 ### **Available Endpoints:**
 
 #### Health Check
