@@ -70,10 +70,8 @@ This video serves as a **non-traditional sales and marketing tool** you can leve
 https://leafengines-agricultural-intelligence.onrender.com
 ```
 
-### **Test API Key:**
-```
-leaf-test-370df0a2e62e
-```
+### **Get Your API Key:**
+Visit [soilsidekickpro.com/api-docs](https://soilsidekickpro.com/api-docs) or request via GitHub issues.
 
 ### **Available Endpoints:**
 
