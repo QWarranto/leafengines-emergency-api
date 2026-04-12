@@ -19,7 +19,7 @@ USAGE_TRACKER = {}
 
 class EmergencyAPI:
     def __init__(self):
-        self.base_url = os.getenv('LEAFENGINES_API_URL', 'https://api.soilsidekickpro.com')
+        self.base_url = os.getenv('LEAFENGINES_API_URL', 'https://leafengines-agricultural-intelligence.onrender.com')
         
     def validate_api_key(self, api_key: str) -> Optional[Dict]:
         """Validate API key and check limits"""

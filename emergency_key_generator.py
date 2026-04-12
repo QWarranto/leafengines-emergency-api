@@ -87,7 +87,7 @@ Thank you for your patience. Here is your emergency API access:
 API Key: {key_record['api_key']}
 Valid Until: {key_record['expires'][:10]}
 API Limit: {key_record['calls_limit']:,} calls
-Base URL: https://api.soilsidekickpro.com/v1
+Base URL: https://leafengines-agricultural-intelligence.onrender.com/v1
 
 Plan: {key_record['plan']}
 Amount: ${key_record['amount']}

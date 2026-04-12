@@ -12,4 +12,4 @@ services:
       - key: ADMIN_TOKEN
         value: emergency_admin_20260405
       - key: LEAFENGINES_API_URL
-        value: https://api.soilsidekickpro.com
+        value: https://leafengines-agricultural-intelligence.onrender.com
