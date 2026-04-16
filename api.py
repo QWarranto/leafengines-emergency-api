@@ -358,3 +358,5 @@ if __name__ == '__main__':
     print(f"🌍 Service must be deployed before issuing keys to developers")
     
     app.run(host='0.0.0.0', port=port, debug=debug)
+# Environment variables deployed: Thu Apr 16 01:14:06 EDT 2026
+
