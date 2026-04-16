@@ -130,6 +130,18 @@ def env_check():
         'note': 'True = variable loaded, False = missing'
     })
 
+@app.route('/v1/env-debug', methods=['GET'])
+def env_debug():
+    """Debug all environment variables"""
+    import os
+    all_vars = dict(os.environ)
+    # Hide values for security, show only keys
+    return jsonify({
+        'all_env_keys': list(all_vars.keys()),
+        'count': len(all_vars),
+        'looking_for': ['STRIPE_SECRET_KEY', 'FLASK_SECRET_KEY', 'LEAFENGINES_STATS_KEY']
+    })
+
 @app.route('/v1/auth/validate', methods=['POST'])
 def validate_key():
     """Validate an API key"""
