@@ -65,6 +65,70 @@ STRIPE_PAYMENT_LINKS = {
         "support": "community",
         "intro_pricing": True,
         "intro_until_founders": 100
+    },
+    
+    # Agent API Starter - $10/month (alternative naming)
+    "agent_api_starter": {
+        "name": "LeafEngines Agent API - Starter Plan",
+        "price_id": "price_agent_starter_10",
+        "payment_link": "https://buy.stripe.com/5kQ6oHcB88bR93s8MSaMU04",
+        "monthly_usd": 10,
+        "calls_per_month": 10000,
+        "requests_per_minute": 100,
+        "white_label": False,
+        "support": "community",
+        "agent_api": True
+    },
+    
+    # Agent API Pro - $49/month (alternative naming)
+    "agent_api_pro": {
+        "name": "LeafEngines Agent API - Pro Plan",
+        "price_id": "price_agent_pro_49",
+        "payment_link": "https://buy.stripe.com/14A6oH7gO3VBcfE1kqaMU05",
+        "monthly_usd": 49,
+        "calls_per_month": 50000,
+        "requests_per_minute": 500,
+        "white_label": "basic",
+        "support": "community",
+        "agent_api": True
+    },
+    
+    # Pay-as-you-go Tiers
+    "payg_exclusive": {
+        "name": "LeafEngines AI Agent API - Exclusive Tier",
+        "price_id": "price_payg_exclusive_10",
+        "payment_link": "https://buy.stripe.com/6oU4gzbx40Jp6Vk1kqaMU0a",
+        "one_time_usd": 10,
+        "calls_included": 1000,
+        "pay_as_you_go": True
+    },
+    "payg_proprietary": {
+        "name": "LeafEngines AI Agent API - Proprietary Tier",
+        "price_id": "price_payg_proprietary_5",
+        "payment_link": "https://buy.stripe.com/3cIeVd9oW1NtgvU1kqaMU09",
+        "one_time_usd": 5,
+        "calls_included": 500,
+        "pay_as_you_go": True
+    },
+    "payg_enhanced": {
+        "name": "LeafEngines AI Agent API - Enhanced Tier",
+        "price_id": "price_payg_enhanced_1_50",
+        "payment_link": "https://buy.stripe.com/7sY28reJg1NtenM8MSaMU0b",
+        "one_time_usd": 1.50,
+        "calls_included": 150,
+        "pay_as_you_go": True
+    },
+    "payg_commoditized": {
+        "name": "LeafEngines AI Agent API - Commoditized Tier",
+        "price_id": "price_payg_commoditized_0_50",
+        "payment_link": "https://buy.stripe.com/8x2fZh1Wu8bR4Nc9QWaMU08",
+        "one_time_usd": 0.50,
+        "calls_included": 50,
+        "pay_as_you_go": True
+    }
+        "support": "community",
+        "intro_pricing": True,
+        "intro_until_founders": 100
     }
 }
 
