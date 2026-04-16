@@ -117,7 +117,18 @@ def health_check():
 @app.route('/test', methods=['GET'])
 def test():
     """Debug test endpoint"""
+    return jsonify({"status": "test"})
+
+@app.route('/v1/env-check', methods=['GET'])
+def env_check():
+    """Check if environment variables are loaded"""
+    import os
     return jsonify({
+        'stripe_key_loaded': bool(os.getenv('STRIPE_SECRET_KEY')),
+        'flask_key_loaded': bool(os.getenv('FLASK_SECRET_KEY')),
+        'stats_key_loaded': bool(os.getenv('LEAFENGINES_STATS_KEY')),
+        'note': 'True = variable loaded, False = missing'
+    })
         "message": "API is working",
         "timestamp": datetime.now().isoformat(),
         "keys_loaded": len(API_KEYS),
