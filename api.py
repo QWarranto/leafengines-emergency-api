@@ -129,11 +129,6 @@ def env_check():
         'stats_key_loaded': bool(os.getenv('LEAFENGINES_STATS_KEY')),
         'note': 'True = variable loaded, False = missing'
     })
-        "message": "API is working",
-        "timestamp": datetime.now().isoformat(),
-        "keys_loaded": len(API_KEYS),
-        "routes": [str(rule) for rule in app.url_map.iter_rules()]
-    })
 
 @app.route('/v1/auth/validate', methods=['POST'])
 def validate_key():
