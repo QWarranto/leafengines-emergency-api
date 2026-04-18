@@ -10,6 +10,8 @@ import json
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 import logging
+import time
+from anonymous_tracker import AnonymousTracker
 
 app = Flask(__name__)
 
@@ -77,12 +79,24 @@ class EmergencyAPI:
             USAGE_TRACKER[api_key] = 0
         USAGE_TRACKER[api_key] += 1
 
+# Initialize anonymous tracker
+try:
+    tracker = AnonymousTracker()
+    logger.info("Anonymous session tracking enabled")
+except Exception as e:
+    logger.warning(f"Failed to initialize anonymous tracker: {e}")
+    tracker = None
+
 api = EmergencyAPI()
 
 @app.before_request
 def log_request():
     """Log all incoming requests"""
     global REQUEST_LOGS
+    
+    # Start timer for processing time
+    request.start_time = time.time()
+    
     log_entry = {
         'timestamp': datetime.now().isoformat(),
         'method': request.method,
@@ -97,6 +111,36 @@ def log_request():
         REQUEST_LOGS = REQUEST_LOGS[-1000:]
     
     logger.info(f"Request: {request.method} {request.path} from {request.remote_addr}")
+
+@app.after_request
+def track_request(response):
+    """Track request anonymously after processing"""
+    if tracker:
+        try:
+            # Calculate processing time
+            processing_time_ms = int((time.time() - getattr(request, 'start_time', time.time())) * 1000)
+            
+            # Determine success based on response code
+            success = 200 <= response.status_code < 400
+            
+            # Track the request
+            session_id = tracker.track_request(
+                request=request,
+                endpoint=request.path,
+                response_code=response.status_code,
+                processing_time_ms=processing_time_ms,
+                success=success,
+                error_message=None if success else response.get_data(as_text=True)[:200]
+            )
+            
+            if session_id:
+                # Add session ID header for debugging (optional)
+                response.headers['X-Session-ID'] = session_id[:8]  # First 8 chars only
+                
+        except Exception as e:
+            logger.error(f"Error in request tracking: {e}")
+    
+    return response
 
 @app.route('/v1/health', methods=['GET'])
 def health_check():
@@ -329,6 +373,80 @@ def get_stats():
         "request_logs_sample": REQUEST_LOGS[-10:],  # Last 10 requests
         "timestamp": datetime.now().isoformat()
     })
+
+@app.route('/v1/admin/usage-stats', methods=['GET'])
+def get_usage_stats():
+    """Get anonymous usage statistics (admin only)"""
+    admin_token = request.headers.get('X-Admin-Token')
+    if admin_token != os.getenv('ADMIN_TOKEN', 'emergency_admin_2026'):
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    # Get days parameter
+    days = request.args.get('days', default=7, type=int)
+    
+    if tracker:
+        stats = tracker.get_usage_stats(days=days)
+        if stats:
+            return jsonify({
+                "success": True,
+                "tracking_enabled": True,
+                "stats": stats
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "tracking_enabled": True,
+                "error": "Failed to retrieve usage stats"
+            })
+    else:
+        return jsonify({
+            "success": False,
+            "tracking_enabled": False,
+            "error": "Anonymous tracking not initialized"
+        })
+
+@app.route('/v1/admin/correlate-download', methods=['POST'])
+def correlate_download():
+    """Correlate download with API usage (admin only)"""
+    admin_token = request.headers.get('X-Admin-Token')
+    if admin_token != os.getenv('ADMIN_TOKEN', 'emergency_admin_2026'):
+        return jsonify({"error": "Unauthorized"}), 403
+    
+    data = request.get_json()
+    if not data or 'download_source' not in data or 'download_timestamp' not in data:
+        return jsonify({"error": "download_source and download_timestamp required"}), 400
+    
+    try:
+        download_timestamp = datetime.fromisoformat(data['download_timestamp'].replace('Z', '+00:00'))
+        download_source = data['download_source']
+        download_country = data.get('download_country')
+        
+        if tracker:
+            correlation = tracker.correlate_with_downloads(
+                download_source=download_source,
+                download_timestamp=download_timestamp,
+                download_country=download_country
+            )
+            
+            if correlation:
+                return jsonify({
+                    "success": True,
+                    "correlation": correlation
+                })
+            else:
+                return jsonify({
+                    "success": False,
+                    "error": "Failed to correlate download"
+                })
+        else:
+            return jsonify({
+                "success": False,
+                "tracking_enabled": False,
+                "error": "Anonymous tracking not initialized"
+            })
+            
+    except ValueError as e:
+        return jsonify({"error": f"Invalid timestamp format: {e}"}), 400
 
 @app.route('/v1/monitor/public', methods=['GET'])
 def public_monitor():
