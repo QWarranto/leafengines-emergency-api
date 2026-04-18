@@ -57,6 +57,78 @@ class AnonymousTracker:
             logger.error(f"Database connection failed: {e}")
             return None
     
+    def _ensure_tables_exist(self, conn):
+        """Check if tables exist"""
+        try:
+            with conn.cursor() as cur:
+                # Check if tables exist
+                cur.execute("""
+                    SELECT table_name 
+                    FROM information_schema.tables 
+                    WHERE table_schema = 'public'
+                    AND table_name IN ('anonymous_sessions', 'api_usage_log', 'platform_correlation')
+                """)
+                existing_tables = [row[0] for row in cur.fetchall()]
+                
+                if len(existing_tables) < 3:
+                    logger.warning(f"Missing tracking tables. Found: {existing_tables}")
+        except Exception as e:
+            logger.warning(f"Could not check table existence: {e}")
+    
+    def _create_tables(self, conn):
+        """Create tracking tables"""
+        try:
+            with conn.cursor() as cur:
+                # Read schema from file
+                schema_path = os.path.join(os.path.dirname(__file__), 'anonymous_tracking_schema.sql')
+                if os.path.exists(schema_path):
+                    with open(schema_path, 'r') as f:
+                        schema_sql = f.read()
+                    
+                    # Execute schema (split by semicolons)
+                    for statement in schema_sql.split(';'):
+                        statement = statement.strip()
+                        if statement:
+                            cur.execute(statement)
+                    
+                    conn.commit()
+                    logger.info("Tracking tables created from schema file")
+                else:
+                    # Create basic tables if schema file doesn't exist
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS anonymous_sessions (
+                            session_id VARCHAR(64) PRIMARY KEY,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            first_api_call TIMESTAMP,
+                            last_api_call TIMESTAMP,
+                            total_calls INTEGER DEFAULT 0,
+                            platform VARCHAR(32),
+                            country_code VARCHAR(2),
+                            user_agent_hash VARCHAR(64)
+                        )
+                    """)
+                    
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS api_usage_log (
+                            log_id SERIAL PRIMARY KEY,
+                            session_id VARCHAR(64) REFERENCES anonymous_sessions(session_id),
+                            endpoint VARCHAR(100),
+                            method VARCHAR(10),
+                            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            response_code INTEGER,
+                            processing_time_ms INTEGER,
+                            parameters_hash VARCHAR(64),
+                            success BOOLEAN DEFAULT TRUE
+                        )
+                    """)
+                    
+                    conn.commit()
+                    logger.info("Basic tracking tables created")
+                    
+        except Exception as e:
+            logger.error(f"Failed to create tables: {e}")
+            raise
+    
     def _hash_string(self, text: str) -> str:
         """Create SHA256 hash of a string (one-way, no PII recovery)"""
         if not text:
@@ -178,74 +250,104 @@ class AnonymousTracker:
             conn = self._get_db_connection()
             if not conn:
                 return None
+            
+            # Ensure tables exist (will warn but not fail)
+            self._ensure_tables_exist(conn)
                 
-            with conn.cursor() as cur:
-                # Check if session exists
-                cur.execute("""
-                    SELECT session_id FROM anonymous_sessions 
-                    WHERE session_id = %s
-                """, (session_id,))
-                
-                if cur.fetchone():
-                    # Update existing session
+            try:
+                with conn.cursor() as cur:
+                    # Check if session exists
                     cur.execute("""
-                        UPDATE anonymous_sessions 
-                        SET 
-                            last_api_call = CURRENT_TIMESTAMP,
-                            total_calls = total_calls + 1,
-                            session_duration_minutes = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - first_api_call)) / 60
+                        SELECT session_id FROM anonymous_sessions 
                         WHERE session_id = %s
                     """, (session_id,))
-                else:
-                    # Create new session
+                    
+                    if cur.fetchone():
+                        # Update existing session
+                        cur.execute("""
+                            UPDATE anonymous_sessions 
+                            SET 
+                                last_api_call = CURRENT_TIMESTAMP,
+                                total_calls = total_calls + 1,
+                                session_duration_minutes = EXTRACT(EPOCH FROM (CURRENT_TIMESTAMP - first_api_call)) / 60
+                            WHERE session_id = %s
+                        """, (session_id,))
+                    else:
+                        # Create new session
+                        cur.execute("""
+                            INSERT INTO anonymous_sessions (
+                                session_id, 
+                                platform, 
+                                country_code, 
+                                user_agent_hash, 
+                                ip_hash,
+                                first_api_call,
+                                last_api_call,
+                                total_calls
+                            ) VALUES (
+                                %s, %s, %s, %s, %s, 
+                                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1
+                            )
+                        """, (
+                            session_id,
+                            platform,
+                            country,
+                            self._hash_string(request.user_agent.string if request.user_agent else ''),
+                            self._hash_string(request.remote_addr)
+                        ))
+                    
+                    # Log the API call
                     cur.execute("""
-                        INSERT INTO anonymous_sessions (
-                            session_id, 
-                            platform, 
-                            country_code, 
-                            user_agent_hash, 
-                            ip_hash,
-                            first_api_call,
-                            last_api_call,
-                            total_calls
-                        ) VALUES (
-                            %s, %s, %s, %s, %s, 
-                            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1
-                        )
+                        INSERT INTO api_usage_log (
+                            session_id,
+                            endpoint,
+                            method,
+                            response_code,
+                            processing_time_ms,
+                            parameters_hash,
+                            success,
+                            error_message,
+                            request_size_bytes
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """, (
                         session_id,
-                        platform,
-                        country,
-                        self._hash_string(request.user_agent.string if request.user_agent else ''),
-                        self._hash_string(request.remote_addr)
-                    ))
-                
-                # Log the API call
-                cur.execute("""
-                    INSERT INTO api_usage_log (
-                        session_id,
                         endpoint,
-                        method,
+                        request.method,
                         response_code,
                         processing_time_ms,
-                        parameters_hash,
+                        params_hash,
                         success,
                         error_message,
-                        request_size_bytes
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                """, (
-                    session_id,
-                    endpoint,
-                    request.method,
-                    response_code,
-                    processing_time_ms,
-                    params_hash,
-                    success,
-                    error_message,
-                    request_size
-                ))
-                
-                conn.commit()
+                        request_size
+                    ))
+                    
+                    conn.commit()
+                    
+            except psycopg2.Error as e:
+                # If tables don't exist, try to create them
+                if 'relation "anonymous_sessions" does not exist' in str(e) or \
+                   'relation "api_usage_log" does not exist' in str(e):
+                    logger.warning(f"Tracking tables don't exist. Attempting to create them...")
+                    
+                    try:
+                        # Try to create tables
+                        self._create_tables(conn)
+                        logger.info("Tracking tables created successfully")
+                        
+                        # Retry the tracking operation
+                        return self.track_request(request, endpoint, response_code, 
+                                                 processing_time_ms, success, error_message)
+                        
+                    except Exception as create_error:
+                        logger.warning(f"Failed to create tables: {create_error}. Tracking disabled for this request.")
+                        conn.rollback()
+                        return None
+                        
+                else:
+                    # Other database error
+                    logger.error(f"Database error in tracking: {e}")
+                    conn.rollback()
+                    return None
                 
             conn.close()
             return session_id
