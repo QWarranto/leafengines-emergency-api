@@ -2,4 +2,3 @@ Flask==2.3.3
 gunicorn==25.3.0
 setuptools
 stripe
-psycopg2==2.9.9
